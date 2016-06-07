@@ -1,3 +1,7 @@
+import java.security.MessageDigest;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
+
 apply plugin: 'java'
 
 version = '1.0'
@@ -31,4 +35,90 @@ task('unpack', type: Copy) {
 
     from zipTree(zipFile)
     into outputDir
+}
+
+void Run(List<String> inCmd, String inWorkdir = null) {
+    println("CMD:" + inCmd)
+    if (inWorkdir == null) {
+        inWorkdir = ".";
+    }
+    ProcessBuilder pb = new ProcessBuilder(inCmd)
+            .directory(new File(inWorkdir))
+            .redirectErrorStream(true);
+    Process p = pb.start()
+    p.inputStream.eachLine {println it}
+    p.waitFor();
+    assert 0 == p.exitValue()
+}
+
+void Run(String inCmd, String inWorkdir = null) {
+    Run(Arrays.asList(inCmd.split()), inWorkdir);
+}
+
+Object[] getImgInfo(File zipFIle, String name) {
+    Object[] ret = new Object[3];
+    MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
+    ZipFile zf = new java.util.zip.ZipFile(zipFIle)
+    ZipEntry entry = zf.getEntry(name)
+    InputStream is = zf.getInputStream(entry)
+    final byte[] buffer = new byte[1024];
+    for (int read = 0; (read = is.read(buffer)) != -1;) {
+        messageDigest.update(buffer, 0, read);
+    }
+    Formatter formatter = new Formatter();
+    for (final byte b : messageDigest.digest()) {
+        formatter.format("%02x", b);
+    }
+    ret[0] = name.replaceAll("\\.", "_");
+    ret[1] = entry.getSize()
+    ret[2] = (formatter.toString())
+    return ret;
+}
+
+void writeVerifyScript(String signedZip) {
+    String template = "if ! applypatch -c EMMC:%s:%d:%s ; then\n\
+    \t%10s=\" X \"\n\
+    else\n\
+    \t%10s=\" - \"\n\
+    fi";
+
+
+    PrintWriter pw = new PrintWriter(new File("verify.sh"));
+    Object[] info2 = getImgInfo(new File(signedZip), "boot.img");
+    pw.println("#!/system/bin/sh")
+    pw.println(String.format(template,
+        "/dev/block/by-name/boot",
+        info2[1], info2[2], info2[0], info2[0]));
+
+    Object[] info3 = getImgInfo(new File(signedZip), "fastlogo.img");
+    pw.println(String.format(template,
+        "/dev/block/by-name/fastlogo",
+        info3[1], info3[2], info3[0], info3[0]));
+
+    Object[] info1 = getImgInfo(new File(signedZip), "tzk_normal.img");
+    pw.println(String.format(template,
+        "/dev/block/by-name/tzk_normal",
+        info1[1], info1[2], info1[0], info1[0]));
+
+    Object[] info4 = getImgInfo(new File(signedZip), "bl_normal.img");
+    pw.println(String.format(template,
+        "/dev/block/by-name/bl_normal",
+        info4[1], info4[2], info4[0], info4[0]));
+
+    pw.println("echo")
+    pw.println('print "boot.img       : ${boot_img}"')
+    pw.println('print "fastlogo.img   : ${fastlogo_img}"')
+    pw.println('print "tzk_normal.img : ${tzk_normal_img}"')
+    pw.println('print "bl_normal.img  : ${bl_normal_img}"')
+    pw.close();
+}
+
+task verify << {
+    String signedZip = "signed.zip"
+    if (null != System.getProperty("zip")) {
+        signedZip = System.getProperty("zip")
+    }
+    writeVerifyScript(signedZip)
+    Run("adb push verify.sh /cache")
+    Run("adb shell sh /cache/verify.sh")
 }
