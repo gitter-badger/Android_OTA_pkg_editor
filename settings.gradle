@@ -1,3 +1,4 @@
 include 'bouncycastle:bcpkix'
 include 'bouncycastle:bcprov'
 include 'apksigner'
+include 'ota_verifier'
