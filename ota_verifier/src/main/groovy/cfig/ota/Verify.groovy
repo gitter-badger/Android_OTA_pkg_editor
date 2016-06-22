@@ -7,9 +7,10 @@ import java.util.zip.ZipFile
 /**
  * Created by yzyu on 2016/6/15.
  */
-class Verify {
+public class Verify {
+    public boolean bDebug;
     void Run(List<String> inCmd, String inWorkdir = null) {
-        println("CMD:" + inCmd)
+        if (bDebug) println("CMD:" + inCmd)
         if (inWorkdir == null) {
             inWorkdir = ".";
         }
@@ -93,21 +94,21 @@ fi";
         pw.close();
     }
 
-    public void verify() {
-        String signedZip = "signed.zip"
+    public void run(String device, String signedZip) {
         String scriptName = "verify.sh"
-        if (null != System.getProperty("zip")) {
-            signedZip = System.getProperty("zip")
+        String deviceSelect = "";
+        if (null != device) {
+            deviceSelect = " -s " + device;
         }
-        Run("adb shell getprop ro.build.fingerprint");
+        Run("adb " + deviceSelect + " shell getprop ro.build.fingerprint");
         writeTestScript(signedZip, scriptName)
-        Run("adb push " + scriptName + " /cache")
+        Run("adb " + deviceSelect + " push " + scriptName + " /cache")
         writeVerifyScript(signedZip, scriptName)
-        Run("adb push " + scriptName + " /cache")
-        Run("adb shell sh /cache/" + scriptName)
-        Run("adb pull /cache/ota_result")
-        Run("adb shell rm -f /cache/" + scriptName)
-        Run("adb shell rm -f /cache/ota_result")
+        Run("adb " + deviceSelect + " push " + scriptName + " /cache")
+        Run("adb " + deviceSelect + " shell sh /cache/" + scriptName)
+        Run("adb " + deviceSelect + " pull /cache/ota_result")
+        Run("adb " + deviceSelect + " shell rm -f /cache/" + scriptName)
+        Run("adb " + deviceSelect + " shell rm -f /cache/ota_result")
         new File(scriptName).delete();
     }
 }
