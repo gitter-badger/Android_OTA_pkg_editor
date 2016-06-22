@@ -19,4 +19,15 @@ task verify(type: JavaExec, dependsOn: 'classes') {
     description 'verify adb connected device against specified OTA package'
     classpath = sourceSets.main.runtimeClasspath
     main = "cfig.ota.launcher.Launcher"
+    args "signed.zip"
+}
+
+task verifier(type: Jar, dependsOn:['build']) {
+    from files(sourceSets.main.output.classesDir)
+    from configurations.runtime.asFileTree.files.collect { zipTree(it) }
+
+    baseName = 'ota_verifier'
+    manifest {
+        attributes 'Main-Class': 'cfig.ota.launcher.Launcher'
+    }
 }
