@@ -3,6 +3,8 @@ package cfig.ota
 import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by yzyu on 2016/6/15.
@@ -30,7 +32,7 @@ public class Verify {
     public Object[] getImgInfo(File zipFIle, String name) {
         Object[] ret = new Object[3];
         MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
-        ZipFile zf = new java.util.zip.ZipFile(zipFIle)
+        ZipFile zf = new ZipFile(zipFIle)
         ZipEntry entry = zf.getEntry(name)
         InputStream is = zf.getInputStream(entry)
         final byte[] buffer = new byte[1024];
@@ -52,6 +54,7 @@ public class Verify {
         pw.println("Good Day!");
         pw.close();
     }
+
     public void writeVerifyScript(String signedZip, String scriptName) {
         String scriptTemplate = "if ! applypatch -c EMMC:%s:%d:%s >/dev/null ; then\n\
 \t%s=\" X \"\n\
@@ -84,11 +87,21 @@ fi";
                 "/dev/block/by-name/bl_normal",
                 info4[1], info4[2], info4[0], info4[0]));
 
+        pw.println(String.format("\
+if [ \"%s\" != \"`getprop ro.build.fingerprint`\" ]; then\n\
+\tsystem_img=\" X \"\n\
+\tresult=\"\${result}1\"\n\
+else\n\
+\tsystem_img=\" - \"\n\
+\tresult=\"\${result}0\"\n\
+fi", getFingerPrint(signedZip, "META-INF/com/google/android/updater-script")));
+
         pw.println("echo")
         pw.println('print "boot.img       : ${boot_img}"')
         pw.println('print "fastlogo.img   : ${fastlogo_img}"')
         pw.println('print "tzk_normal.img : ${tzk_normal_img}"')
         pw.println('print "bl_normal.img  : ${bl_normal_img}"')
+        pw.println('print "system.img     : ${system_img}"')
         pw.println('echo "\$result"');
         pw.println('echo "\$result" > /cache/ota_result')
         pw.close();
@@ -100,7 +113,6 @@ fi";
         if (null != device) {
             deviceSelect = " -s " + device;
         }
-        Run("adb " + deviceSelect + " shell getprop ro.build.fingerprint");
         writeTestScript(signedZip, scriptName)
         Run("adb " + deviceSelect + " push " + scriptName + " /cache")
         writeVerifyScript(signedZip, scriptName)
@@ -110,5 +122,25 @@ fi";
         Run("adb " + deviceSelect + " shell rm -f /cache/" + scriptName)
         Run("adb " + deviceSelect + " shell rm -f /cache/ota_result")
         new File(scriptName).delete();
+    }
+
+    public String getFingerPrint(String signedZip, String name) {
+        String ret;
+        ZipFile zf = new ZipFile(signedZip)
+        ZipEntry entry = zf.getEntry(name)
+        InputStream is = zf.getInputStream(entry)
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        String line = null;
+        String regex = "ui_print\\(\"Target: (\\S+)\"\\)";
+
+        while ((line = reader.readLine()) != null) {
+            Pattern p = Pattern.compile(regex);
+            Matcher m = p.matcher(line);
+            if (m.find()) {
+                ret = m.group(1);
+            }
+        }
+        is.close();
+        return ret;
     }
 }
