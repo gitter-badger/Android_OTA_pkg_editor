@@ -37,3 +37,13 @@ task('unpack', type: Copy) {
     from zipTree(zipFile)
     into outputDir
 }
+
+task removeUTC () << {
+    ant.replaceregexp(file: "unzip_ota/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
+}
+
+task utc << {
+    unpack.execute()
+    removeUTC.execute()
+    pack.execute()
+}
