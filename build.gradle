@@ -45,5 +45,6 @@ task removeUTC () << {
 task utc << {
     unpack.execute()
     removeUTC.execute()
+    doZip.execute()
     pack.execute()
 }

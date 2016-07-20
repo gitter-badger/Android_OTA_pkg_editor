@@ -27,3 +27,6 @@ modify it according to your needs, then repack and sign it with default Android 
     ./gradlew pack
 
 You will get a modified **signed.zip**.
+
+## advanced topic
+Please read [advanced topic guide](https://github.com/cfig/Android_OTA_pkg_editor/blob/master/README.expert.md).
