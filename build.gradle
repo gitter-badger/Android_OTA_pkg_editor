@@ -6,7 +6,7 @@ apply plugin: 'java'
 
 version = '1.0'
 
-def unzip_root = 'unzip_ota'
+def unzip_root = 'build/unzip_ota'
 def target_ota_pkg = 'signed.zip'
 
 repositories {
@@ -39,7 +39,7 @@ task('unpack', type: Copy) {
 }
 
 task removeUTC () << {
-    ant.replaceregexp(file: "unzip_ota/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
+    ant.replaceregexp(file: unzip_root + "/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
 }
 
 task utc << {
