@@ -42,6 +42,17 @@ task removeUTC () << {
     ant.replaceregexp(file: unzip_root + "/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
 }
 
+task signapk(type: JavaExec, dependsOn: [":apksigner:jar"]) {
+    description "resign apk that is specified by -Dfile="
+    main = 'com.android.signapk.SignApk'
+    classpath = files("apksigner/build/libs/apksigner-1.0.jar")
+    maxHeapSize '2048m'
+    args 'security/platform.x509.pem','security/platform.pk8',System.getProperty("file"),System.getProperty("file") + ".signed"
+    doLast {
+        println "      Sign apk Done: "
+    }
+}
+
 task utc << {
     unpack.execute()
     removeUTC.execute()
