@@ -87,6 +87,17 @@ fi";
                 "/dev/block/by-name/bl_normal",
                 info4[1], info4[2], info4[0], info4[0]));
 
+        Object[] info5 = getImgInfo(new File(signedZip), "bootloader.img");
+        info5[0] = "bootloader0"
+        pw.println(String.format(scriptTemplate,
+                "/dev/block/mmcblk0boot0",
+                info5[1], info5[2], info5[0], info5[0]));
+
+        info5[0] = "bootloader1"
+        pw.println(String.format(scriptTemplate,
+                "/dev/block/mmcblk0boot1",
+                info5[1], info5[2], info5[0], info5[0]));
+
         pw.println(String.format("\
 if [ \"%s\" != \"`getprop ro.build.fingerprint`\" ]; then\n\
 \tsystem_img=\" X \"\n\
@@ -97,6 +108,8 @@ else\n\
 fi", getFingerPrint(signedZip, "META-INF/com/google/android/updater-script")));
 
         pw.println("echo")
+        pw.println('print "boot0          : ${bootloader0}"')
+        pw.println('print "boot1          : ${bootloader1}"')
         pw.println('print "boot.img       : ${boot_img}"')
         pw.println('print "fastlogo.img   : ${fastlogo_img}"')
         pw.println('print "tzk_normal.img : ${tzk_normal_img}"')
