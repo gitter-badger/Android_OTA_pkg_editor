@@ -38,8 +38,10 @@ task('unpack', type: Copy) {
     into outputDir
 }
 
-task removeUTC () << {
-    ant.replaceregexp(file: unzip_root + "/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
+task removeUTC() {
+    doLast {
+        ant.replaceregexp(file: unzip_root + "/META-INF/com/google/android/updater-script", match: "^.*ro.build.date.utc.*\$", replace: "", byline: "true")
+    }
 }
 
 task signapk(type: JavaExec, dependsOn: [":apksigner:jar"]) {
@@ -53,9 +55,11 @@ task signapk(type: JavaExec, dependsOn: [":apksigner:jar"]) {
     }
 }
 
-task utc << {
-    unpack.execute()
-    removeUTC.execute()
-    doZip.execute()
-    pack.execute()
+task utc() {
+    doLast {
+        unpack.execute()
+        removeUTC.execute()
+        doZip.execute()
+        pack.execute()
+    }
 }
