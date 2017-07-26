@@ -6,6 +6,8 @@ An convenient command line tool to manipulate Android OTA(Over-The-Air) update p
 ## Compatible Android versions
 
 This tool is known to work for Nexus (or Nexus compatible) OTA package for the following Android releases:
+ - O
+ - Nougat
  - Marshmallow (API Level 23)
  - Lollipop (API Level 21,22)
  - Kitkat (API Level 19)
